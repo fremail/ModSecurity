@@ -75,6 +75,9 @@ class Regex {
     int search(const std::string &s) const;
 
     const std::string pattern;
+
+    static unsigned long match_limit;
+    static unsigned long match_limit_recursion;
  private:
     pcre *m_pc = NULL;
     pcre_extra *m_pce = NULL;

@@ -52,6 +52,9 @@ bool crlfIsNewline() {
     return crlf_is_newline;
 }
 
+unsigned long Regex::match_limit = 1000;
+unsigned long Regex::match_limit_recursion = 1000;
+
 Regex::Regex(const std::string& pattern_, bool ignoreCase)
     : pattern(pattern_.empty() ? ".*" : pattern_) {
     const char *errptr = NULL;
@@ -65,6 +68,12 @@ Regex::Regex(const std::string& pattern_, bool ignoreCase)
         &errptr, &erroffset, NULL);
 
     m_pce = pcre_study(m_pc, pcre_study_opt, &errptr);
+
+    m_pce->flags |= PCRE_EXTRA_MATCH_LIMIT;
+    m_pce->match_limit = Regex::match_limit;
+
+    m_pce->flags |= PCRE_EXTRA_MATCH_LIMIT_RECURSION;
+    m_pce->match_limit_recursion = Regex::match_limit_recursion;
 }
 
 
