@@ -52,8 +52,8 @@ bool crlfIsNewline() {
     return crlf_is_newline;
 }
 
-unsigned long Regex::match_limit = 1000;
-unsigned long Regex::match_limit_recursion = 1000;
+unsigned long Regex::match_limit = 10000000;
+unsigned long Regex::match_limit_recursion = 10000000;
 
 Regex::Regex(const std::string& pattern_, bool ignoreCase)
     : pattern(pattern_.empty() ? ".*" : pattern_) {
