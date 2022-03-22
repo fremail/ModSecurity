@@ -52,7 +52,12 @@ bool RxGlobal::evaluate(Transaction *transaction, RuleWithActions *rule,
     }
 
     std::vector<Utils::SMatchCapture> captures;
-    re->searchGlobal(input, captures);
+    if (transaction->m_rules->m_pcreMatchLimit.m_set) {
+        unsigned long match_limit = transaction->m_rules->m_pcreMatchLimit.m_value;
+        re->searchGlobal(input, captures, match_limit);
+    } else {
+        re->searchGlobal(input, captures);
+    }
 
     if (rule && rule->hasCaptureAction() && transaction) {
         for (const Utils::SMatchCapture& capture : captures) {
