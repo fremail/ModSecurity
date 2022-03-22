@@ -25,9 +25,9 @@
 #include "src/utils/geo_lookup.h"
 
 #if PCRE_HAVE_JIT
-#define pcre_study_opt PCRE_STUDY_JIT_COMPILE
+#define pcre_study_opt PCRE_STUDY_JIT_COMPILE | PCRE_STUDY_EXTRA_NEEDED
 #else
-#define pcre_study_opt 0
+#define pcre_study_opt PCRE_STUDY_EXTRA_NEEDED
 #endif
 
 namespace modsecurity {
@@ -118,10 +118,23 @@ std::list<SMatch> Regex::searchAll(const std::string& s) const {
 }
 
 bool Regex::searchOneMatch(const std::string& s, std::vector<SMatchCapture>& captures) const {
+    return searchOneMatch(s, captures, get_default_match_limit());
+}
+
+bool Regex::searchOneMatch(const std::string& s, std::vector<SMatchCapture>& captures, unsigned long match_limit) const {
     const char *subject = s.c_str();
     int ovector[OVECCOUNT];
+    pcre_extra local_pce;
+    pcre_extra *pce = NULL;
 
-    int rc = pcre_exec(m_pc, m_pce, subject, s.size(), 0, 0, ovector, OVECCOUNT);
+    if (m_pce != NULL) {
+        local_pce = *m_pce;
+        local_pce.match_limit = match_limit;
+        local_pce.flags |= PCRE_EXTRA_MATCH_LIMIT;
+        pce = &local_pce;
+    }
+
+    int rc = pcre_exec(m_pc, pce, subject, s.size(), 0, 0, ovector, OVECCOUNT);
 
     for (int i = 0; i < rc; i++) {
         size_t start = ovector[2*i];
@@ -138,7 +151,20 @@ bool Regex::searchOneMatch(const std::string& s, std::vector<SMatchCapture>& cap
 }
 
 bool Regex::searchGlobal(const std::string& s, std::vector<SMatchCapture>& captures) const {
+    searchGlobal(s, captures, get_default_match_limit());
+}
+
+bool Regex::searchGlobal(const std::string& s, std::vector<SMatchCapture>& captures, unsigned long match_limit) const {
     const char *subject = s.c_str();
+    pcre_extra local_pce;
+    pcre_extra *pce = NULL;
+
+    if (m_pce != NULL) {
+        local_pce = *m_pce;
+        local_pce.match_limit = match_limit;
+        local_pce.flags |= PCRE_EXTRA_MATCH_LIMIT;
+        pce = &local_pce;
+    }
 
     bool prev_match_zero_length = false;
     int startOffset = 0;
@@ -149,7 +175,7 @@ bool Regex::searchGlobal(const std::string& s, std::vector<SMatchCapture>& captu
         if (prev_match_zero_length) {
             pcre_options = PCRE_NOTEMPTY_ATSTART | PCRE_ANCHORED;
         }
-        int rc = pcre_exec(m_pc, m_pce, subject, s.length(), startOffset, pcre_options, ovector, OVECCOUNT);
+        int rc = pcre_exec(m_pc, pce, subject, s.length(), startOffset, pcre_options, ovector, OVECCOUNT);
 
         if (rc > 0) {
             size_t firstGroupForThisFullMatch = captures.size();
@@ -213,6 +239,16 @@ int Regex::search(const std::string& s) const {
     int ovector[OVECCOUNT];
     return pcre_exec(m_pc, m_pce, s.c_str(),
         s.size(), 0, 0, ovector, OVECCOUNT) > 0;
+}
+
+unsigned long Regex::get_default_match_limit() const {
+    unsigned long default_match_limit;
+    int ret = pcre_config(PCRE_CONFIG_MATCH_LIMIT, &default_match_limit);
+    if (ret < 0) {
+        // TODO: log error?
+        default_match_limit = 10000000;
+    }
+    return default_match_limit;
 }
 
 }  // namespace Utils

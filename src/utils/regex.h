@@ -70,12 +70,17 @@ class Regex {
 
     std::list<SMatch> searchAll(const std::string& s) const;
     bool searchOneMatch(const std::string& s, std::vector<SMatchCapture>& captures) const;
+    // TODO: Confirm there aren't other rule uses of match limits that should be limited
+    bool searchOneMatch(const std::string& s, std::vector<SMatchCapture>& captures, unsigned long match_limit ) const;
     bool searchGlobal(const std::string& s, std::vector<SMatchCapture>& captures) const;
+    bool searchGlobal(const std::string& s, std::vector<SMatchCapture>& captures, unsigned long match_limit ) const;
     int search(const std::string &s, SMatch *match) const;
     int search(const std::string &s) const;
 
     const std::string pattern;
  private:
+    unsigned long get_default_match_limit() const;
+
     pcre *m_pc = NULL;
     pcre_extra *m_pce = NULL;
 };
