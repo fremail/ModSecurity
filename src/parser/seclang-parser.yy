@@ -1644,10 +1644,10 @@ expression:
         YYERROR;
 */
     | CONFIG_DIR_PCRE_MATCH_LIMIT
-/* Parser error disabled to avoid breaking default installations with modsecurity.conf-recommended
-        driver.error(@0, "SecPcreMatchLimit is not currently supported. Default PCRE values are being used for now");
-        YYERROR;
-*/
+      {
+        driver.m_pcreMatchLimit.m_set = true;
+        driver.m_pcreMatchLimit.m_value = atoi($1.c_str());
+      }
     | CONGIG_DIR_RESPONSE_BODY_MP
       {
         std::istringstream buf($1);
